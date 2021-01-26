@@ -1,0 +1,183 @@
+#!/bin/bash
+
+#############################################################
+# Author: Cleverson Ferreira                                #
+# Date: 02/06/2017                                          # 
+# Description: Agenda de contatos usando shell script       #
+#############################################################
+
+DIR="./contatos.txt"
+
+#lista contatos existentes
+function listContacts {
+  IFS=":"
+  count=0
+   while read -r c_nome c_email c_cpf  
+    do
+     count=$(( count + 1 ))
+     echo "id: $count"
+     echo "Nome: $c_nome"
+     echo "E-mail: $c_email"
+     echo "CPF: $c_cpf"
+     echo "------------------------------"
+    done < "$DIR"
+}
+
+echo "
+Escolha uma opcao:
+
+1. Adicionar Contato
+2. Editar contato
+3. Excluir Contato
+4. Buscar Contato
+5. Todos os Contatos
+0. Sair
+"
+
+# get user choice
+echo "Digite o numero da opcao escolhida > "
+read opcao
+
+case $opcao in
+
+  #add contact
+  1)
+   #pega dados do contato nome-email-cpf
+   clear
+   echo "Nome: " 
+   read nome
+   echo "E-mail: " 
+   read email
+   echo "CPF: " 
+   read cpf
+   
+   #verifica se email ja existe   
+   file_info=$( grep "$email" $DIR )
+   if [[ -n "$email" ]]; then
+     IFS=":" read c_nome c_email c_cpf <<< $file_info
+     if [[ -n $mail ]]; then
+      #se existe retorna mensagem
+      echo "E-mail $mail ja cadastrado."
+      exit
+     else
+      #se nao existe salva no arquivo
+      echo "$nome:$email:$cpf" >> $DIR
+      clear
+      echo "------------------------------"
+      echo "Contato Cadastrado com Sucesso"
+      echo "------------------------------"
+      echo "Nome: $nome"
+      echo "E-mail: $email"
+      echo "CPF: $cpf"
+      exit
+      #limpa tela | msg sucesso | exibe menu
+     fi
+   fi
+  ;;
+
+  #edit contact
+  2) 
+   clear
+   #pega nome
+   echo "Digite o nome que deseja editar"
+   read findThisName   
+
+   if [[ -n "$findThisName" ]]; then
+    busca=$(grep -i "^$findThisName" $DIR)
+
+    if [[ -n "$busca" ]]; then
+
+      echo "$busca"|awk -F: '{print "Nome:" $1 " | Email: "$2" | CPF: "$3}' 
+      read a b c <<< $( echo ${busca} | awk -F":" '{print $1" "$2" "$3}' )
+      
+      echo "Entre com o novo nome, enter para manter."
+
+      echo "Nome atual: $a"
+      read newNome
+      if [[ -z "$newNome" ]]; then
+        read newNome <<< $( echo ${a} )
+      fi
+
+      echo "Email atual: $b"
+      read newEmail
+      if [[ -z "$newEmail" ]]; then
+        read newEmail <<< $( echo ${b} )
+      fi
+      
+      echo "CPF atual: $c"
+      read newCPF
+      if [[ -z "$newCPF" ]]; then
+        read newCPF <<< $( echo ${c} )
+      fi
+
+      newRegister="$newNome:$newEmail:$newCPF"
+      echo $newRegister
+      echo $findThisName
+      sed -i "s/^$findThisName.*/$newRegister/" $DIR
+      echo "contato atualizado com sucesso"
+
+     else
+      echo "Contato nao localizado"
+    fi
+   fi
+   exit
+  ;;
+
+  #delete contact
+  3) 
+   clear
+   count=0
+   #listar contatos
+   echo "Contatos"
+   listContacts
+   #peagr id digitado
+   #validar se e uma opcao valida
+   echo ""
+   echo "Digite o id que deseja excluir: "
+   read deleteid
+   #apagar
+   sed -i "$deleteid d" $DIR
+   #mensagem confirmacao
+   echo "Contato $deleteid excluido com sucesso"
+   exit
+  ;;
+
+  #find contact
+  4) 
+   clear
+   #pega nome
+   echo "Digite o nome que deseja procurar"
+   read findThisName   
+
+   if [[ -n "$findThisName" ]]; then
+       IFS=":"
+       finds=$(grep -i "^$findThisName" $DIR)
+
+  	if [ "$finds" != "" ];then
+		  echo "$finds"|awk -F: '{print "Nome:" $1 " | Email: "$2" | CPF: "$3}' 
+        	  echo "------------------------------"
+	   else
+		echo "Contato nao localizado"
+	fi
+   fi
+   exit
+  ;;
+
+  #all contacts
+  5)
+   clear
+   echo "Todos os registros"
+   echo ""
+   listContacts
+   echo ""
+   echo "Fim de registros"
+   exit
+  ;;
+
+  #exit
+  0) 
+   echo "Saindo ..."
+   exit
+  ;;
+
+esac
